@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Control Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;600&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0155a5;
+            --success: #146133;
+            --danger: #b80000;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #1c1e21;
+        }
+
+        body {
+            font-family: 'Inter', 'Chakra Petch', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        h1 { font-size: 24px; margin-bottom: 5px; color: var(--primary); }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            font-size: 18px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-set { background: var(--primary); color: white; }
+        .btn-run { background: var(--success); color: white; margin-top: 15px; }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+
+        .status-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f1f3f5;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #444;
+            min-height: 20px;
+        }
+
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            background: #ccc;
+        }
+        .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>Motor Console</h1>
+        <p class="subtitle">ระบบควบคุมระยะทางผ่านเน็ตเวิร์ก</p>
+        
+        <div class="input-group">
+            <label>ระยะทางที่ต้องการ (เมตร)</label>
+            <input type="number" id="distance" placeholder="0.00" step="0.01">
+        </div>
+
+        <button class="btn-set" onclick="sendCommand('set')">
+            <span>⚙️</span> ตั้งค่าระยะทาง
+        </button>
+
+        <button class="btn-run" onclick="sendCommand('run')">
+            <span>🚀</span> สั่งเริ่มทำงาน (RUN)
+        </button>
+
+        <div class="status-box">
+            <span id="led" class="indicator"></span>
+            <span id="statusText">สถานะ: รอการเชื่อมต่อ...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ระบุ IP ของ ESP32 (เดี๋ยวค่อยมาแก้ตอนเชื่อมบอร์ด)
+    const ESP_IP = "192.168.1.XX"; 
+
+    function sendCommand(action) {
+        let url = `http://${ESP_IP}/${action}`;
+        const statusText = document.getElementById('statusText');
+        const led = document.getElementById('led');
+
+        if(action === 'set') {
+            const dist = document.getElementById('distance').value;
+            if(!dist) { alert("กรุณาใส่ระยะทางก่อนครับ"); return; }
+            url += `?dist=${dist}`;
+        }
+
+        statusText.innerText = "กำลังส่งคำสั่ง...";
+        
+        // ทดสอบส่งข้อมูลด้วย Fetch API
+        fetch(url, { mode: 'no-cors' }) // ใช้ no-cors เบื้องต้นเพื่อเลี่ยงปัญหา Security ตอนเทส
+            .then(() => {
+                statusText.innerText = "ส่งคำสั่ง " + action.toUpperCase() + " สำเร็จ!";
+                led.classList.add('online');
+                setTimeout(() => led.classList.remove('online'), 2000);
+            })
+            .catch(err => {
+                statusText.innerText = "เชื่อมต่อ ESP32 ไม่ได้ (เช็ค IP/WiFi)";
+                led.classList.remove('online');
+            });
+    }
+</script>
+
+</body>
+</html>
