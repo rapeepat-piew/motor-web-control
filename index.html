@@ -19,7 +19,7 @@
         label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
         input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--primary); }
-        input:disabled { background: #f1f3f5; color: #888; border-color: #e9ecef; }
+        input:disabled { background: #f1f3f5; color: #333; border-color: #e9ecef; font-weight: bold; }
         .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         button { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:active { transform: scale(0.96); }
@@ -38,14 +38,14 @@
         <h1>Connect to Device</h1>
         <div class="input-group">
             <label>ESP32 IP ADDRESS</label>
-            <input type="text" id="ip_addr" placeholder="เช่น 192.168.1.50">
+            <input type="text" id="ip_addr" placeholder="192.168.1.XX">
         </div>
         <button class="btn-primary" onclick="connect()">ตกลง (CONNECT)</button>
     </div>
 
     <div id="page-menu" class="card">
         <h1>Main Menu</h1>
-        <p style="font-size: 14px; color: #666;">เชื่อมต่อแล้ว: <span id="display_ip"></span></p>
+        <p style="font-size: 14px; color: #666;">IP: <span id="display_ip"></span></p>
         <div class="grid-buttons">
             <button class="btn-primary" onclick="showPage('page-system')" style="height: 100px;">SYSTEM</button>
             <button class="btn-gray" onclick="showPage('page-settings')" style="height: 100px;">SETTINGS</button>
@@ -56,49 +56,49 @@
     <div id="page-system" class="card">
         <h1>System Control</h1>
         <div class="input-group">
-            <label>1. ระยะทางที่ต้องการ (mm)</label>
-            <input type="number" id="sys_dist" oninput="calculateSystem()" placeholder="ระบุระยะ mm">
+            <label>1. ระยะทางที่ต้องการสั่ง (mm)</label>
+            <input type="number" id="sys_dist_input" oninput="calculateSystem()" placeholder="ใส่ระยะที่ต้องการเพิ่ม">
         </div>
         <div class="input-group">
-            <label>2. รอบการหมุน (คำนวณ)</label>
+            <label>2. รอบการหมุนครั้งนี้ (Round)</label>
             <input type="text" id="sys_calc_rot" disabled value="0.00">
         </div>
         <div class="input-group">
-            <label>3. ตำแหน่งปัจจุบัน (Round)</label>
-            <input type="text" id="sys_curr_pos" disabled value="0.00">
+            <label>3. ตำแหน่งปัจจุบันสะสม (mm)</label>
+            <input type="text" id="sys_curr_pos_mm" disabled value="0.00">
         </div>
         <div class="grid-buttons">
             <button class="btn-gray" onclick="showPage('page-menu')">BACK</button>
-            <button class="btn-danger" onclick="apiCall('zero')">ZERO</button>
-            <button class="btn-success full-btn" onclick="runSystem()">RUN MOTOR</button>
+            <button class="btn-danger" onclick="zeroSystem()">ZERO</button>
+            <button class="btn-success full-btn" onclick="runSystem()">RUN MOTOR (เพิ่มระยะ)</button>
         </div>
-        <div id="status-sys" class="status">สถานะ: พร้อมทำงาน</div>
+        <div id="status-sys" class="status">พร้อมทำงาน</div>
     </div>
 
     <div id="page-settings" class="card">
         <h1>Device Settings</h1>
         <div class="input-group">
-            <label>รอบการหมุน (Reference Rotation)</label>
-            <input type="number" id="set_rot" placeholder="เช่น 1">
+            <label>รอบการหมุน (Ref Rotation)</label>
+            <input type="number" id="set_rot" value="1">
         </div>
         <div class="input-group">
-            <label>ระยะทาง (Reference Distance - mm)</label>
-            <input type="number" id="set_dist" placeholder="เช่น 1.0">
+            <label>ระยะทาง mm (Ref Distance)</label>
+            <input type="number" id="set_dist" value="1.0">
         </div>
         <div class="grid-buttons">
             <button class="btn-gray" onclick="showPage('page-menu')">BACK</button>
-            <button class="btn-primary" onclick="apiCall('run?dist=' + document.getElementById('set_rot').value)">TEST RUN</button>
+            <button class="btn-primary" onclick="testRun()">TEST RUN (1 R)</button>
             <button class="btn-success full-btn" onclick="applySettings()">APPLY (SAVE TO ARDUINO)</button>
         </div>
-        <div id="status-set" class="status">ตั้งค่าพื้นฐานของมอเตอร์</div>
+        <div id="status-set" class="status">ตั้งค่าพื้นฐาน</div>
     </div>
 </div>
 
 <script>
     let deviceIP = "";
-    // ค่าจาก Arduino (ต้องสัมพันธ์กับหน้า Setting)
     let refRot = 1;
     let refDist = 1;
+    let currentTotalMm = 0; // ตัวแปรเก็บระยะสะสมหน่วยเป็น mm
 
     function showPage(pageId) {
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
@@ -114,40 +114,57 @@
         showPage('page-menu');
     }
 
-    // โหลด IP ล่าสุด
     document.getElementById('ip_addr').value = localStorage.getItem('last_ip') || "";
 
     function calculateSystem() {
-        const inputMm = document.getElementById('sys_dist').value;
+        const inputMm = parseFloat(document.getElementById('sys_dist_input').value) || 0;
         const calc = (inputMm * refRot) / refDist;
-        document.getElementById('sys_calc_rot').value = isNaN(calc) ? "0.00" : calc.toFixed(2);
+        document.getElementById('sys_calc_rot').value = calc.toFixed(2);
     }
 
     function runSystem() {
-        const dist = document.getElementById('sys_dist').value;
-        if(!dist) return alert("กรุณาใส่ระยะทาง");
-        apiCall(`run?dist=${dist}`, 'status-sys');
+        const inputMm = parseFloat(document.getElementById('sys_dist_input').value);
+        if(!inputMm) return alert("กรุณาใส่ระยะทาง");
+        
+        apiCall(`run?dist=${inputMm}`, 'status-sys', () => {
+            // เมื่อส่งสำเร็จ ให้บวกระยะสะสม
+            currentTotalMm += inputMm;
+            document.getElementById('sys_curr_pos_mm').value = currentTotalMm.toFixed(2);
+            document.getElementById('sys_dist_input').value = ""; // ล้างช่องใส่เลข
+            document.getElementById('sys_calc_rot').value = "0.00";
+        });
+    }
+
+    function zeroSystem() {
+        apiCall('zero', 'status-sys', () => {
+            currentTotalMm = 0; // รีเซ็ตค่าสะสมในเว็บเป็น 0
+            document.getElementById('sys_curr_pos_mm').value = "0.00";
+        });
     }
 
     function applySettings() {
         refRot = parseFloat(document.getElementById('set_rot').value);
         refDist = parseFloat(document.getElementById('set_dist').value);
-        // ส่งค่าไปบันทึกที่ Arduino (ใช้ query string ตามโครงสร้างโค้ดเก่า)
         apiCall(`save?rot=${refRot}&dist=${refDist}`, 'status-set');
     }
 
-    function apiCall(path, statusId) {
+    function testRun() {
+        const r = document.getElementById('set_rot').value;
+        // ส่งคำสั่ง Test โดยอิงจากระยะทางที่ทำให้ได้รอบตามที่ตั้งไว้
+        apiCall(`run?dist=${refDist}`, 'status-set');
+    }
+
+    function apiCall(path, statusId, callback) {
         const statusEl = document.getElementById(statusId);
-        if(statusEl) statusEl.innerText = "กำลังส่งคำสั่ง...";
+        statusEl.innerText = "กำลังส่งคำสั่ง...";
         
         fetch(`http://${deviceIP}/${path}`)
             .then(res => {
-                if(statusEl) statusEl.innerText = "ส่งคำสั่งสำเร็จ!";
-                // ถ้าเป็นคำสั่ง zero ให้รีเซ็ตค่าแสดงผลในเว็บด้วย
-                if(path === 'zero') document.getElementById('sys_curr_pos').value = "0.00";
+                statusEl.innerText = "ส่งคำสั่งสำเร็จ!";
+                if(callback) callback();
             })
             .catch(err => {
-                if(statusEl) statusEl.innerText = "ติดต่อบอร์ดไม่ได้! (เช็ค IP/CORS)";
+                statusEl.innerText = "ติดต่อบอร์ดไม่ได้!";
             });
     }
 </script>
