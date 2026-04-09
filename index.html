@@ -3,190 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motor Control Dashboard</title>
+    <title>Motor Control System</title>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;600&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0155a5;
-            --success: #146133;
-            --danger: #b80000;
-            --bg: #f8f9fa;
-            --card-bg: #ffffff;
-            --text: #1c1e21;
+            --primary: #0155a5; --success: #146133; --danger: #b80000;
+            --bg: #f4f7f9; --card-bg: #ffffff; --text: #1c1e21;
         }
-
-        body {
-            font-family: 'Inter', 'Chakra Petch', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            text-align: center;
-        }
-
-        h1 { font-size: 24px; margin-bottom: 5px; color: var(--primary); }
-        p.subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
-
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: var(--primary); }
-        
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #eee;
-            border-radius: 10px;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.3s;
-            font-family: 'Inter';
-        }
-
+        body { font-family: 'Inter', 'Chakra Petch', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 400px; padding: 20px; box-sizing: border-box; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; display: none; }
+        .active { display: block; }
+        h1 { font-size: 22px; color: var(--primary); margin-bottom: 20px; }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--primary); }
-
-        .ip-box { background: #eef2f7; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #d1d9e6; }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn-run { background: var(--success); color: white; }
-        .btn-zero { background: #6c757d; color: white; margin-top: 10px; font-size: 14px; padding: 10px; }
-        
-        button:active { transform: scale(0.98); opacity: 0.9; }
-
-        .status-box {
-            margin-top: 25px;
-            padding: 15px;
-            background: #f1f3f5;
-            border-radius: 10px;
-            font-size: 13px;
-            color: #444;
-            min-height: 20px;
-        }
-
-        .indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-            background: #ccc;
-        }
-        .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
-        .offline { background: var(--danger); }
+        input:disabled { background: #f1f3f5; color: #888; border-color: #e9ecef; }
+        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.96); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-gray { background: #6c757d; color: white; }
+        .full-btn { grid-column: span 2; }
+        .status { margin-top: 15px; font-size: 12px; color: #888; padding: 10px; background: #f8f9fa; border-radius: 8px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card">
-        <h1>Motor Console</h1>
-        <p class="subtitle">ระบบควบคุมระยะทางผ่านเน็ตเวิร์ก</p>
-
-        <div class="ip-box">
-            <div class="input-group">
-                <label>ESP32 IP ADDRESS</label>
-                <input type="text" id="esp_ip" placeholder="เช่น 192.168.1.50" value="">
-            </div>
-        </div>
-        
+    <div id="page-login" class="card active">
+        <h1>Connect to Device</h1>
         <div class="input-group">
-            <label>ระยะทางที่ต้องการ (เมตร)</label>
-            <input type="number" id="distance" placeholder="0.00" step="0.01">
+            <label>ESP32 IP ADDRESS</label>
+            <input type="text" id="ip_addr" placeholder="เช่น 192.168.1.50">
         </div>
+        <button class="btn-primary" onclick="connect()">ตกลง (CONNECT)</button>
+    </div>
 
-        <button class="btn-run" onclick="sendCommand('run')">
-            <span>🚀</span> สั่งหมุนมอเตอร์ (RUN)
-        </button>
-
-        <button class="btn-zero" onclick="sendCommand('zero')">
-            <span>🔄</span> เซ็ตตำแหน่งศูนย์ (ZERO)
-        </button>
-
-        <div class="status-box">
-            <span id="led" class="indicator"></span>
-            <span id="statusText">สถานะ: ใส่ IP แล้วกดเริ่มได้เลย</span>
+    <div id="page-menu" class="card">
+        <h1>Main Menu</h1>
+        <p style="font-size: 14px; color: #666;">เชื่อมต่อแล้ว: <span id="display_ip"></span></p>
+        <div class="grid-buttons">
+            <button class="btn-primary" onclick="showPage('page-system')" style="height: 100px;">SYSTEM</button>
+            <button class="btn-gray" onclick="showPage('page-settings')" style="height: 100px;">SETTINGS</button>
+            <button class="btn-danger full-btn" onclick="showPage('page-login')">DISCONNECT</button>
         </div>
+    </div>
+
+    <div id="page-system" class="card">
+        <h1>System Control</h1>
+        <div class="input-group">
+            <label>1. ระยะทางที่ต้องการ (mm)</label>
+            <input type="number" id="sys_dist" oninput="calculateSystem()" placeholder="ระบุระยะ mm">
+        </div>
+        <div class="input-group">
+            <label>2. รอบการหมุน (คำนวณ)</label>
+            <input type="text" id="sys_calc_rot" disabled value="0.00">
+        </div>
+        <div class="input-group">
+            <label>3. ตำแหน่งปัจจุบัน (Round)</label>
+            <input type="text" id="sys_curr_pos" disabled value="0.00">
+        </div>
+        <div class="grid-buttons">
+            <button class="btn-gray" onclick="showPage('page-menu')">BACK</button>
+            <button class="btn-danger" onclick="apiCall('zero')">ZERO</button>
+            <button class="btn-success full-btn" onclick="runSystem()">RUN MOTOR</button>
+        </div>
+        <div id="status-sys" class="status">สถานะ: พร้อมทำงาน</div>
+    </div>
+
+    <div id="page-settings" class="card">
+        <h1>Device Settings</h1>
+        <div class="input-group">
+            <label>รอบการหมุน (Reference Rotation)</label>
+            <input type="number" id="set_rot" placeholder="เช่น 1">
+        </div>
+        <div class="input-group">
+            <label>ระยะทาง (Reference Distance - mm)</label>
+            <input type="number" id="set_dist" placeholder="เช่น 1.0">
+        </div>
+        <div class="grid-buttons">
+            <button class="btn-gray" onclick="showPage('page-menu')">BACK</button>
+            <button class="btn-primary" onclick="apiCall('run?dist=' + document.getElementById('set_rot').value)">TEST RUN</button>
+            <button class="btn-success full-btn" onclick="applySettings()">APPLY (SAVE TO ARDUINO)</button>
+        </div>
+        <div id="status-set" class="status">ตั้งค่าพื้นฐานของมอเตอร์</div>
     </div>
 </div>
 
 <script>
-    function sendCommand(action) {
-        const ip = document.getElementById('esp_ip').value;
-        const dist = document.getElementById('distance').value;
-        const statusText = document.getElementById('statusText');
-        const led = document.getElementById('led');
+    let deviceIP = "";
+    // ค่าจาก Arduino (ต้องสัมพันธ์กับหน้า Setting)
+    let refRot = 1;
+    let refDist = 1;
 
-        if(!ip) {
-            alert("กรุณากรอก IP Address ของบอร์ดก่อนครับ");
-            return;
-        }
-
-        let url = `http://${ip}/${action}`;
-
-        if(action === 'run') {
-            if(!dist) { alert("กรุณาใส่ระยะทางก่อนครับ"); return; }
-            url += `?dist=${dist}`;
-        }
-
-        statusText.innerText = "กำลังส่งคำสั่งไปที่ " + ip + "...";
-        led.classList.remove('online', 'offline');
-
-        // ใช้ fetch โดยเปิดโหมดปกติ (ใน Arduino เราใส่ enableCORS ไว้แล้ว)
-        fetch(url)
-            .then(response => {
-                if(response.ok) {
-                    statusText.innerText = "สำเร็จ: " + action.toUpperCase();
-                    led.classList.add('online');
-                } else {
-                    throw new Error();
-                }
-            })
-            .catch(err => {
-                // ถ้า fetch ติดเรื่อง Mixed Content (HTTPS -> HTTP) 
-                // ข้อความนี้จะเตือนให้ผู้ใช้ไปตั้งค่า Browser
-                statusText.innerText = "Error: ไม่สามารถติดต่อบอร์ดได้ \n(ตรวจสอบ IP หรือตั้งค่า Insecure Content ในเบราว์เซอร์)";
-                led.classList.add('offline');
-                console.error("Fetch error:", err);
-            });
+    function showPage(pageId) {
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
     }
 
-    // จำค่า IP ล่าสุดไว้ในเครื่อง (ไม่ต้องกรอกใหม่ทุกครั้งที่เปิดเว็บ)
-    document.getElementById('esp_ip').value = localStorage.getItem('last_ip') || "";
-    document.getElementById('esp_ip').onchange = (e) => localStorage.setItem('last_ip', e.target.value);
+    function connect() {
+        const ip = document.getElementById('ip_addr').value;
+        if(!ip) return alert("กรุณากรอก IP");
+        deviceIP = ip;
+        document.getElementById('display_ip').innerText = ip;
+        localStorage.setItem('last_ip', ip);
+        showPage('page-menu');
+    }
+
+    // โหลด IP ล่าสุด
+    document.getElementById('ip_addr').value = localStorage.getItem('last_ip') || "";
+
+    function calculateSystem() {
+        const inputMm = document.getElementById('sys_dist').value;
+        const calc = (inputMm * refRot) / refDist;
+        document.getElementById('sys_calc_rot').value = isNaN(calc) ? "0.00" : calc.toFixed(2);
+    }
+
+    function runSystem() {
+        const dist = document.getElementById('sys_dist').value;
+        if(!dist) return alert("กรุณาใส่ระยะทาง");
+        apiCall(`run?dist=${dist}`, 'status-sys');
+    }
+
+    function applySettings() {
+        refRot = parseFloat(document.getElementById('set_rot').value);
+        refDist = parseFloat(document.getElementById('set_dist').value);
+        // ส่งค่าไปบันทึกที่ Arduino (ใช้ query string ตามโครงสร้างโค้ดเก่า)
+        apiCall(`save?rot=${refRot}&dist=${refDist}`, 'status-set');
+    }
+
+    function apiCall(path, statusId) {
+        const statusEl = document.getElementById(statusId);
+        if(statusEl) statusEl.innerText = "กำลังส่งคำสั่ง...";
+        
+        fetch(`http://${deviceIP}/${path}`)
+            .then(res => {
+                if(statusEl) statusEl.innerText = "ส่งคำสั่งสำเร็จ!";
+                // ถ้าเป็นคำสั่ง zero ให้รีเซ็ตค่าแสดงผลในเว็บด้วย
+                if(path === 'zero') document.getElementById('sys_curr_pos').value = "0.00";
+            })
+            .catch(err => {
+                if(statusEl) statusEl.innerText = "ติดต่อบอร์ดไม่ได้! (เช็ค IP/CORS)";
+            });
+    }
 </script>
 
 </body>
