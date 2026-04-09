@@ -3,61 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motor Control System</title>
+    <title>Motor Control Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;600&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #0155a5; --success: #146133; --danger: #b80000;
-            --bg: #f4f7f9; --card-bg: #ffffff; --text: #1c1e21;
+            --bg: #f8f9fa; --card-bg: #ffffff; --text: #1c1e21;
         }
-        body { font-family: 'Inter', 'Chakra Petch', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 400px; padding: 20px; box-sizing: border-box; }
-        .card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; display: none; }
-        .active { display: block; }
-        h1 { font-size: 22px; color: var(--primary); margin-bottom: 20px; }
-        .input-group { text-align: left; margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
-        input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: 'Inter', 'Chakra Petch', sans-serif;
+            background-color: var(--bg); color: var(--text); margin: 0;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        .container { width: 100%; max-width: 400px; padding: 20px; }
+        .card { background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; display: none; }
+        .card.active { display: block; }
+
+        h1 { font-size: 24px; margin-bottom: 5px; color: var(--primary); }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        
+        input {
+            width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px;
+            font-size: 18px; box-sizing: border-box; outline: none; transition: border-color 0.3s;
+        }
         input:focus { border-color: var(--primary); }
-        input:disabled { background: #f1f3f5; color: #333; border-color: #e9ecef; font-weight: bold; }
-        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.96); }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
+        input:disabled { background: #f1f3f5; color: #333; font-weight: bold; }
+
+        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button {
+            width: 100%; padding: 15px; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+
+        .btn-set { background: var(--primary); color: white; }
+        .btn-run { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-gray { background: #6c757d; color: white; }
         .full-btn { grid-column: span 2; }
-        .status { margin-top: 15px; font-size: 12px; color: #888; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        
+        button:active { transform: scale(0.98); opacity: 0.9; }
+
+        .status-box {
+            margin-top: 25px; padding: 15px; background: #f1f3f5;
+            border-radius: 10px; font-size: 13px; color: #444; min-height: 20px;
+        }
+
+        .indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; background: #ccc; }
+        .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="page-login" class="card active">
-        <h1>Connect to Device</h1>
+        <h1>Connect Device</h1>
+        <p class="subtitle">ระบุ IP Address ของ ESP32</p>
         <div class="input-group">
-            <label>ESP32 IP ADDRESS</label>
+            <label>IP ADDRESS</label>
             <input type="text" id="ip_addr" placeholder="192.168.1.XX">
         </div>
-        <button class="btn-primary" onclick="connect()">ตกลง (CONNECT)</button>
+        <button class="btn-set full-btn" onclick="connect()">ตกลง (CONNECT)</button>
     </div>
 
     <div id="page-menu" class="card">
         <h1>Main Menu</h1>
-        <p style="font-size: 14px; color: #666;">IP: <span id="display_ip"></span></p>
+        <p class="subtitle">IP: <span id="display_ip"></span></p>
         <div class="grid-buttons">
-            <button class="btn-primary" onclick="showPage('page-system')" style="height: 100px;">SYSTEM</button>
-            <button class="btn-gray" onclick="showPage('page-settings')" style="height: 100px;">SETTINGS</button>
+            <button class="btn-set" onclick="showPage('page-system')" style="height: 100px; flex-direction: column;"><span>⚙️</span>SYSTEM</button>
+            <button class="btn-gray" onclick="showPage('page-settings')" style="height: 100px; flex-direction: column;"><span>🛠️</span>SETTINGS</button>
             <button class="btn-danger full-btn" onclick="showPage('page-login')">DISCONNECT</button>
         </div>
     </div>
 
     <div id="page-system" class="card">
         <h1>System Control</h1>
+        <p class="subtitle">สั่งงานและดูระยะสะสม</p>
         <div class="input-group">
             <label>1. ระยะทางที่ต้องการสั่ง (mm)</label>
-            <input type="number" id="sys_dist_input" oninput="calculateSystem()" placeholder="ใส่ระยะที่ต้องการเพิ่ม">
+            <input type="number" id="sys_dist_input" oninput="calculateSystem()" placeholder="0.00">
         </div>
         <div class="input-group">
             <label>2. รอบการหมุนครั้งนี้ (Round)</label>
@@ -69,36 +98,30 @@
         </div>
         <div class="grid-buttons">
             <button class="btn-gray" onclick="showPage('page-menu')">BACK</button>
-            <button class="btn-danger" onclick="zeroSystem()">ZERO</button>
-            <button class="btn-success full-btn" onclick="runSystem()">RUN MOTOR (เพิ่มระยะ)</button>
+            <button class="btn-danger" onclick="sendCommand('zero')">ZERO</button>
+            <button class="btn-run full-btn" onclick="runSystem()">🚀 สั่งเริ่มทำงาน (RUN)</button>
         </div>
-        <div id="status-sys" class="status">พร้อมทำงาน</div>
+        <div class="status-box"><span id="led-sys" class="indicator"></span><span id="status-sys">สถานะ: พร้อม</span></div>
     </div>
 
     <div id="page-settings" class="card">
-        <h1>Device Settings</h1>
-        <div class="input-group">
-            <label>รอบการหมุน (Ref Rotation)</label>
-            <input type="number" id="set_rot" value="1">
-        </div>
-        <div class="input-group">
-            <label>ระยะทาง mm (Ref Distance)</label>
-            <input type="number" id="set_dist" value="1.0">
-        </div>
+        <h1>Settings</h1>
+        <p class="subtitle">ดึงค่าจากบอร์ดและตั้งค่าพื้นฐาน</p>
+        <div class="input-group"><label>รอบการหมุน (Ref Rotation)</label><input type="number" id="set_rot"></div>
+        <div class="input-group"><label>ระยะทาง mm (Ref Distance)</label><input type="number" id="set_dist"></div>
+        <div class="input-group"><label>ความเร็ว (Motor Speed us)</label><input type="number" id="set_spd"></div>
         <div class="grid-buttons">
             <button class="btn-gray" onclick="showPage('page-menu')">BACK</button>
-            <button class="btn-primary" onclick="testRun()">TEST RUN (1 R)</button>
-            <button class="btn-success full-btn" onclick="applySettings()">APPLY (SAVE TO ARDUINO)</button>
+            <button class="btn-set" onclick="testRun()">TEST (1R)</button>
+            <button class="btn-run full-btn" onclick="applySettings()">APPLY & SAVE</button>
         </div>
-        <div id="status-set" class="status">ตั้งค่าพื้นฐาน</div>
+        <div class="status-box"><span id="led-set" class="indicator"></span><span id="status-set">ข้อมูลซิงค์กับบอร์ดแล้ว</span></div>
     </div>
 </div>
 
 <script>
-    let deviceIP = "";
-    let refRot = 1;
-    let refDist = 1;
-    let currentTotalMm = 0; // ตัวแปรเก็บระยะสะสมหน่วยเป็น mm
+    let ESP_IP = "";
+    let refRot = 1, refDist = 1, currentTotalMm = 0;
 
     function showPage(pageId) {
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
@@ -108,66 +131,62 @@
     function connect() {
         const ip = document.getElementById('ip_addr').value;
         if(!ip) return alert("กรุณากรอก IP");
-        deviceIP = ip;
+        ESP_IP = ip;
         document.getElementById('display_ip').innerText = ip;
         localStorage.setItem('last_ip', ip);
+        fetchStatus();
         showPage('page-menu');
     }
-
     document.getElementById('ip_addr').value = localStorage.getItem('last_ip') || "";
 
+    function fetchStatus() {
+        fetch(`http://${ESP_IP}/status`)
+            .then(res => res.json())
+            .then(data => {
+                refRot = data.rot; refDist = data.dist; currentTotalMm = data.pos;
+                document.getElementById('set_rot').value = data.rot;
+                document.getElementById('set_dist').value = data.dist;
+                document.getElementById('set_spd').value = data.spd;
+                document.getElementById('sys_curr_pos_mm').value = data.pos.toFixed(2);
+            }).catch(err => console.log("Sync Error"));
+    }
+
     function calculateSystem() {
-        const inputMm = parseFloat(document.getElementById('sys_dist_input').value) || 0;
-        const calc = (inputMm * refRot) / refDist;
-        document.getElementById('sys_calc_rot').value = calc.toFixed(2);
+        const val = parseFloat(document.getElementById('sys_dist_input').value) || 0;
+        document.getElementById('sys_calc_rot').value = ((val * refRot) / refDist).toFixed(2);
     }
 
     function runSystem() {
-        const inputMm = parseFloat(document.getElementById('sys_dist_input').value);
-        if(!inputMm) return alert("กรุณาใส่ระยะทาง");
-        
-        apiCall(`run?dist=${inputMm}`, 'status-sys', () => {
-            // เมื่อส่งสำเร็จ ให้บวกระยะสะสม
-            currentTotalMm += inputMm;
+        const val = document.getElementById('sys_dist_input').value;
+        if(!val) return alert("ใส่ระยะทาง");
+        sendCommand(`run?dist=${val}`, 'sys', () => {
+            currentTotalMm += parseFloat(val);
             document.getElementById('sys_curr_pos_mm').value = currentTotalMm.toFixed(2);
-            document.getElementById('sys_dist_input').value = ""; // ล้างช่องใส่เลข
-            document.getElementById('sys_calc_rot').value = "0.00";
-        });
-    }
-
-    function zeroSystem() {
-        apiCall('zero', 'status-sys', () => {
-            currentTotalMm = 0; // รีเซ็ตค่าสะสมในเว็บเป็น 0
-            document.getElementById('sys_curr_pos_mm').value = "0.00";
+            document.getElementById('sys_dist_input').value = "";
         });
     }
 
     function applySettings() {
-        refRot = parseFloat(document.getElementById('set_rot').value);
-        refDist = parseFloat(document.getElementById('set_dist').value);
-        apiCall(`save?rot=${refRot}&dist=${refDist}`, 'status-set');
+        const r = document.getElementById('set_rot').value, d = document.getElementById('set_dist').value, s = document.getElementById('set_spd').value;
+        sendCommand(`save?rot=${r}&dist=${d}&spd=${s}`, 'set', fetchStatus);
     }
 
-    function testRun() {
-        const r = document.getElementById('set_rot').value;
-        // ส่งคำสั่ง Test โดยอิงจากระยะทางที่ทำให้ได้รอบตามที่ตั้งไว้
-        apiCall(`run?dist=${refDist}`, 'status-set');
-    }
+    function testRun() { sendCommand(`run?dist=${refDist}`, 'set'); }
 
-    function apiCall(path, statusId, callback) {
-        const statusEl = document.getElementById(statusId);
-        statusEl.innerText = "กำลังส่งคำสั่ง...";
+    function sendCommand(action, type = 'sys', callback = null) {
+        const statusText = document.getElementById(type === 'sys' ? 'status-sys' : 'status-set');
+        const led = document.getElementById(type === 'sys' ? 'led-sys' : 'led-set');
         
-        fetch(`http://${deviceIP}/${path}`)
-            .then(res => {
-                statusEl.innerText = "ส่งคำสั่งสำเร็จ!";
+        statusText.innerText = "กำลังส่งคำสั่ง...";
+        fetch(`http://${ESP_IP}/${action}`)
+            .then(() => {
+                statusText.innerText = "สำเร็จ!";
+                led.classList.add('online');
+                setTimeout(() => led.classList.remove('online'), 2000);
+                if(action === 'zero') { currentTotalMm = 0; document.getElementById('sys_curr_pos_mm').value = "0.00"; }
                 if(callback) callback();
-            })
-            .catch(err => {
-                statusEl.innerText = "ติดต่อบอร์ดไม่ได้!";
-            });
+            }).catch(() => { statusText.innerText = "ล้มเหลว!"; });
     }
 </script>
-
 </body>
 </html>
